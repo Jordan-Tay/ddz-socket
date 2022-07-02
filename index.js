@@ -5,6 +5,8 @@ const { Server } = require("socket.io");
 const cors = require('cors');
 app.use(cors());
 
+const PORT = process.env.PORT || 3000;
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: 'http://localhost:3000'
@@ -83,6 +85,6 @@ io.on('connection', (socket) => {
   })
 });
 
-server.listen(4000, () => {
+server.listen(PORT, () => {
   console.log('listening on *:4000');
 });
