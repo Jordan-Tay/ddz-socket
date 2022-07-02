@@ -5,7 +5,7 @@ const { Server } = require("socket.io");
 const cors = require('cors');
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -35,16 +35,20 @@ const startGame = () => {
   };
 }
 
+const rooms = {};
+
 io.on('connection', (socket) => {
   console.log('a user connected');
 
-  socket.on('create-room', () => {
+  socket.on('create-room', (name) => {
     const roomId = room();
+    rooms[roomId] = {};
+    rooms[roomId].players = [name];
     socket.join(roomId)
-    io.emit('joining-room', { userId: 0, roomId });
+    io.emit('joining-room', { userId: 0, name, roomId });
   });
 
-  socket.on('join-room', (roomId) => {
+  socket.on('join-room', ({ name, roomId }) => {
     const room = io.sockets.adapter.rooms.get(roomId);
     if (!room) {
       socket.emit('no-room-found');
@@ -52,11 +56,14 @@ io.on('connection', (socket) => {
       const numClients = room.size;
       if (numClients < 3) {
         socket.join(roomId);
-        socket.emit('joining-room', { userId: numClients, roomId });
+        rooms[roomId].players.push(name);
+        socket.emit('joining-room', { userId: numClients, name, roomId });
+        io.to(roomId).emit('players', rooms[roomId].players);
         if (numClients === 2) {
           io.to(roomId).emit('start-game', startGame());
           io.to(roomId).emit('turn', {
             player: 0,
+            playerName: rooms[roomId].players[0],
             lastPlayedBy: 2,
             lastPlayed: null
           });
@@ -70,6 +77,7 @@ io.on('connection', (socket) => {
 
   socket.on('play', ({ roomId, turn }) => {
     let { player, lastPlayedBy } = turn;
+    turn.playerName = rooms[roomId].players[player];
     if (player === lastPlayedBy) {
       turn.lastPlayed = null;
     }
