@@ -60,10 +60,11 @@ io.on('connection', (socket) => {
         socket.emit('joining-room', { userId: numClients, name, roomId });
         io.to(roomId).emit('players', rooms[roomId].players);
         if (numClients === 2) {
-          io.to(roomId).emit('start-game', startGame());
+          let hands = startGame();
           io.to(roomId).emit('turn', {
             player: 0,
             playerName: rooms[roomId].players[0],
+            hands,
             lastPlayedBy: 2,
             lastPlayed: null
           });
@@ -85,7 +86,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('win', ({ roomId, userId }) => {
-    io.to(roomId).emit('win', userId);
+    io.to(roomId).emit('win', rooms[roomId].players[userId]);
+    delete rooms[roomId];
   });
 
   socket.on('disconnect', () => {
