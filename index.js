@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
     rooms[roomId] = {};
     rooms[roomId].players = [name];
     socket.join(roomId)
-    io.emit('joining-room', { userId: 0, name, roomId });
+    socket.emit('joining-room', { userId: 0, name, roomId });
   });
 
   socket.on('join-room', ({ name, roomId }) => {
@@ -75,6 +75,10 @@ io.on('connection', (socket) => {
       }
     }
   });
+
+  socket.on('live', ({ roomId, userId, preview }) => {
+    io.to(roomId).emit('preview', { player: userId, preview });
+  })
 
   socket.on('play', ({ roomId, turn }) => {
     let { player, lastPlayedBy } = turn;
